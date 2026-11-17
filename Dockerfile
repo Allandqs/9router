@@ -96,7 +96,7 @@ RUN mkdir -p /app/data && chown -R node:node /app && \
 # Avoid a full distribution upgrade in the runtime image. It makes builds less
 # reproducible and is unrelated to installing the runtime entrypoint helper.
 RUN apk add --no-cache su-exec ffmpeg && \
-  printf '#!/bin/sh\nchown -R node:node /app/data /app/data-home 2>/dev/null\nexec su-exec node "$@"\n' > /entrypoint.sh && \
+  printf '#!/bin/sh\nif [ -n "$BACKUP_URL" ] && [ ! -s /app/data/db/data.sqlite ]; then\n  mkdir -p /app/data/db\n  echo "[restore] baixando backup do GitHub..."\n  wget -q --header="Authorization: Bearer $BACKUP_TOKEN" -O /app/data/db/data.sqlite "$BACKUP_URL" && echo "[restore] banco restaurado com sucesso" || { echo "[restore] FALHOU - iniciando com banco vazio"; rm -f /app/data/db/data.sqlite; }\nfi\nchown -R node:node /app/data /app/data-home 2>/dev/null\nexec su-exec node "$@"\n' > /entrypoint.sh && \
   chmod +x /entrypoint.sh
 
 EXPOSE 20128
